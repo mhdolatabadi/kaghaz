@@ -24,19 +24,55 @@ class StrokesPainter extends CustomPainter {
       old.revision != revision || !identical(old.strokes, strokes);
 }
 
-/// Paints only the stroke being drawn, so committed ink is not repainted.
-class LiveStrokePainter extends CustomPainter {
-  LiveStrokePainter(this.stroke);
+/// Paints the gesture in progress and the selection, so committed ink is
+/// not repainted on every pointer move.
+class LivePainter extends CustomPainter {
+  LivePainter({
+    required this.strokes,
+    this.lasso,
+    this.selectionBounds,
+    required this.accent,
+  });
 
-  final Stroke? stroke;
+  final List<Stroke> strokes;
+  final List<Offset>? lasso;
+  final Rect? selectionBounds;
+  final Color accent;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (stroke case final s?) paintStroke(canvas, s);
+    for (final s in strokes) {
+      paintStroke(canvas, s);
+    }
+    final outline = Paint()
+      ..color = accent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    if (lasso case final points? when points.length > 1) {
+      canvas.drawPath(
+        _dashed(Path()..addPolygon(points, false)),
+        outline,
+      );
+    }
+    if (selectionBounds case final rect?) {
+      final r = RRect.fromRectAndRadius(rect.inflate(10), const Radius.circular(8));
+      canvas.drawRRect(r, Paint()..color = accent.withValues(alpha: 0.06));
+      canvas.drawPath(_dashed(Path()..addRRect(r)), outline);
+    }
   }
 
   @override
-  bool shouldRepaint(LiveStrokePainter old) => true;
+  bool shouldRepaint(LivePainter old) => true;
+}
+
+Path _dashed(Path source, {double dash = 10, double gap = 6}) {
+  final out = Path();
+  for (final metric in source.computeMetrics()) {
+    for (var d = 0.0; d < metric.length; d += dash + gap) {
+      out.addPath(metric.extractPath(d, d + dash), Offset.zero);
+    }
+  }
+  return out;
 }
 
 void paintStroke(Canvas canvas, Stroke stroke) {
@@ -66,6 +102,15 @@ void paintStroke(Canvas canvas, Stroke stroke) {
       _widthAt(stroke, points.first) / 2,
       paint..style = PaintingStyle.fill,
     );
+    return;
+  }
+
+  if (!stroke.pressure) {
+    paint.strokeWidth = stroke.width;
+    final path = stroke.straight
+        ? (Path()..addPolygon([for (final p in points) p.offset], false))
+        : _smoothPath(points);
+    canvas.drawPath(path, paint);
     return;
   }
 

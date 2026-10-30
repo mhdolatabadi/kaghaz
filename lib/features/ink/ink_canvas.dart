@@ -19,10 +19,14 @@ class InkCanvas extends StatefulWidget {
     super.key,
     required this.controller,
     required this.background,
+    this.topInset = 12,
   });
 
   final InkController controller;
   final PageBackground background;
+
+  /// Space above the page at the initial fit, e.g. for a floating toolbar.
+  final double topInset;
 
   @override
   State<InkCanvas> createState() => _InkCanvasState();
@@ -106,7 +110,7 @@ class _InkCanvasState extends State<InkCanvas> {
     final scale = (viewport.width - 24) / pageSize.width;
     final dx = (viewport.width - pageSize.width * scale) / 2;
     _transform.value = Matrix4.identity()
-      ..translateByDouble(dx, 12, 0, 1)
+      ..translateByDouble(dx, widget.topInset, 0, 1)
       ..scaleByDouble(scale, scale, 1, 1);
   }
 
@@ -150,10 +154,20 @@ class _InkCanvasState extends State<InkCanvas> {
                     ),
                     RepaintBoundary(
                       child: CustomPaint(
-                        painter: StrokesPainter(c.strokes, revision: c.revision),
+                        painter: StrokesPainter(
+                          c.restingStrokes,
+                          revision: c.revision,
+                        ),
                       ),
                     ),
-                    CustomPaint(painter: LiveStrokePainter(c.liveStroke)),
+                    CustomPaint(
+                      painter: LivePainter(
+                        strokes: c.liveStrokes,
+                        lasso: c.lassoPath,
+                        selectionBounds: c.selectionBounds,
+                        accent: scheme.primary,
+                      ),
+                    ),
                   ],
                 ),
               ),
