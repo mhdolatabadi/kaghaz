@@ -141,6 +141,29 @@ void main() {
       expect(c.strokes.first.points.first.y, 10);
     });
 
+    test('dragging the corner handle scales the selection', () {
+      final c = withTwoLines();
+      final before = c.selection.single.bounds;
+      final handle = c.selectionHandle!;
+      c.begin(InkPoint(handle.dx, handle.dy));
+      final target = before.topLeft + (handle - before.topLeft) * 2;
+      c.extend(InkPoint(target.dx, target.dy));
+      c.end();
+      final after = c.selection.single.bounds;
+      // Bounds include the line width (3 per side), which does not scale.
+      expect(after.width, closeTo((before.width - 6) * 2 + 6, 0.5));
+      expect(c.selection.single.width, 3);
+      c.undo();
+      expect(c.strokes.first.bounds.width, closeTo(before.width, 0.01));
+    });
+
+    test('line width of the selection can change', () {
+      final c = withTwoLines();
+      c.setSelectionWidth(9);
+      expect(c.selection.single.width, 9);
+      expect(c.strokes.last.width, 3);
+    });
+
     test('delete, duplicate and recolor act on the selection', () {
       final c = withTwoLines();
       c.duplicateSelection();

@@ -42,6 +42,20 @@ class Notebooks extends Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+/// An imported PDF file. Its pages are shown under the ink of note pages
+/// that point at it.
+@DataClassName('PdfFile')
+class PdfFiles extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  BlobColumn get bytes => blob()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Default page size in logical units, roughly A4.
+const defaultPageWidth = 1240.0;
+const defaultPageHeight = 1754.0;
+
 @DataClassName('NotePage')
 class NotePages extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -57,15 +71,32 @@ class NotePages extends Table {
 
   /// Typed content for text pages.
   TextColumn get body => text().withDefault(const Constant(''))();
+
+  /// Page size in logical units; PDF pages keep their own aspect ratio.
+  RealColumn get width => real().withDefault(const Constant(defaultPageWidth))();
+  RealColumn get height => real().withDefault(const Constant(defaultPageHeight))();
+
+  /// The PDF drawn behind the ink, and which of its pages (0-based).
+  IntColumn get pdfId => integer()
+      .nullable()
+      .references(PdfFiles, #id, onDelete: KeyAction.setNull)();
+  IntColumn get pdfPage => integer().nullable()();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-@DriftDatabase(tables: [Folders, Notebooks, NotePages])
+/// One page of a PDF being imported: its size in PDF points.
+class PdfPageSize {
+  const PdfPageSize(this.width, this.height);
+  final double width;
+  final double height;
+}
+
+@DriftDatabase(tables: [Folders, Notebooks, PdfFiles, NotePages])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openDefault());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,6 +106,13 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(notebooks, notebooks.folderId);
             await m.addColumn(notebooks, notebooks.favorite);
             await m.addColumn(notebooks, notebooks.defaultBackground);
+          }
+          if (from < 3) {
+            await m.createTable(pdfFiles);
+            await m.addColumn(notePages, notePages.width);
+            await m.addColumn(notePages, notePages.height);
+            await m.addColumn(notePages, notePages.pdfId);
+            await m.addColumn(notePages, notePages.pdfPage);
           }
         },
         beforeOpen: (details) async {
@@ -227,8 +265,62 @@ class AppDatabase extends _$AppDatabase {
       (update(notebooks)..where((n) => n.id.equals(id)))
           .write(NotebooksCompanion(folderId: Value(folderId)));
 
-  Future<void> deleteNotebook(int id) =>
-      (delete(notebooks)..where((n) => n.id.equals(id))).go();
+  Future<void> deleteNotebook(int id) => transaction(() async {
+        await (delete(notebooks)..where((n) => n.id.equals(id))).go();
+        await _deleteUnusedPdfs();
+      });
+
+  // PDFs
+
+  Future<PdfFile> getPdf(int id) =>
+      (select(pdfFiles)..where((f) => f.id.equals(id))).getSingle();
+
+  /// Stores [bytes] and adds one page per PDF page to [notebookId], or to a
+  /// new notebook titled [name] when [notebookId] is null. Returns the
+  /// notebook id.
+  Future<int> importPdf({
+    required String name,
+    required Uint8List bytes,
+    required List<PdfPageSize> pages,
+    int? notebookId,
+    int? folderId,
+    int? color,
+  }) {
+    return transaction(() async {
+      final pdfId = await into(pdfFiles)
+          .insert(PdfFilesCompanion.insert(name: name, bytes: bytes));
+      final target = notebookId ??
+          await into(notebooks).insert(NotebooksCompanion.insert(
+            title: name,
+            color: Value.absentIfNull(color),
+            folderId: Value(folderId),
+            defaultBackground: const Value(PageBackground.blank),
+          ));
+      var position = await _nextPosition(target);
+      for (var i = 0; i < pages.length; i++) {
+        final size = pages[i];
+        await into(notePages).insert(NotePagesCompanion.insert(
+          notebookId: target,
+          position: position++,
+          kind: PageKind.ink,
+          background: const Value(PageBackground.blank),
+          width: const Value(defaultPageWidth),
+          height: Value(defaultPageWidth * size.height / size.width),
+          pdfId: Value(pdfId),
+          pdfPage: Value(i),
+        ));
+      }
+      await _touchNotebook(target);
+      return target;
+    });
+  }
+
+  Future<void> _deleteUnusedPdfs() => customUpdate(
+        'DELETE FROM pdf_files WHERE id NOT IN '
+        '(SELECT pdf_id FROM note_pages WHERE pdf_id IS NOT NULL)',
+        updates: {pdfFiles},
+        updateKind: UpdateKind.delete,
+      );
 
   Future<void> _touchNotebook(int id) =>
       (update(notebooks)..where((n) => n.id.equals(id)))
@@ -279,9 +371,20 @@ class AppDatabase extends _$AppDatabase {
             ..where((n) => n.id.equals(notebookId)))
           .getSingle();
       int position;
+      var width = defaultPageWidth, height = defaultPageHeight;
       if (afterPosition == null) {
         position = await _nextPosition(notebookId);
       } else {
+        // A page inserted between PDF pages matches its neighbour's size.
+        final neighbour = await (select(notePages)
+              ..where((p) =>
+                  p.notebookId.equals(notebookId) &
+                  p.position.equals(afterPosition)))
+            .getSingleOrNull();
+        if (neighbour != null) {
+          width = neighbour.width;
+          height = neighbour.height;
+        }
         position = afterPosition + 1;
         await customUpdate(
           'UPDATE note_pages SET position = position + 1 '
@@ -295,6 +398,8 @@ class AppDatabase extends _$AppDatabase {
         position: position,
         kind: kind,
         background: Value(background ?? notebook.defaultBackground),
+        width: Value(width),
+        height: Value(height),
       ));
       await _touchNotebook(notebookId);
       return id;
@@ -310,12 +415,21 @@ class AppDatabase extends _$AppDatabase {
           afterPosition: page.position,
         );
         await (update(notePages)..where((p) => p.id.equals(id))).write(
-            NotePagesCompanion(ink: Value(page.ink), body: Value(page.body)));
+          NotePagesCompanion(
+            ink: Value(page.ink),
+            body: Value(page.body),
+            width: Value(page.width),
+            height: Value(page.height),
+            pdfId: Value(page.pdfId),
+            pdfPage: Value(page.pdfPage),
+          ),
+        );
         return id;
       });
 
   Future<void> deletePage(NotePage page) => transaction(() async {
         await (delete(notePages)..where((p) => p.id.equals(page.id))).go();
+        await _deleteUnusedPdfs();
         await _renumber(page.notebookId);
         await _touchNotebook(page.notebookId);
       });

@@ -25,6 +25,14 @@ class InkController extends ChangeNotifier {
   Offset? _dragStart;
   Offset _dragDelta = Offset.zero;
 
+  // Set while the selection is resized from its corner handle.
+  Offset? _resizeAnchor;
+  Offset? _resizeHandle;
+  double _resizeScale = 1;
+
+  /// Distance in page units within which the resize handle is grabbed.
+  static const handleReach = 28.0;
+
   Set<Stroke> _selection = {};
 
   InkTool tool = InkTool.pen;
@@ -58,18 +66,37 @@ class InkController extends ChangeNotifier {
       return [_shapeFrom(a, _shapeEnd ?? a)];
     }
     if (isDraggingSelection) {
-      return [for (final s in _selection) s.translate(_dragDelta)];
+      return [for (final s in _selection) _transformed(s)];
     }
     return const [];
   }
 
-  Rect? get selectionBounds {
-    if (_selection.isEmpty) return null;
-    return _selection
-        .map((s) => s.bounds)
-        .reduce((a, b) => a.expandToInclude(b))
-        .shift(_dragDelta);
+  Stroke _transformed(Stroke s) {
+    final anchor = _resizeAnchor;
+    return anchor != null
+        ? s.scaleAbout(anchor, _resizeScale)
+        : s.translate(_dragDelta);
   }
+
+  Rect? get _restingSelectionBounds {
+    if (_selection.isEmpty) return null;
+    return _selection.map((s) => s.bounds).reduce((a, b) => a.expandToInclude(b));
+  }
+
+  Rect? get selectionBounds {
+    final rect = _restingSelectionBounds;
+    if (rect == null) return null;
+    if (_resizeAnchor case final anchor?) {
+      return Rect.fromPoints(
+        anchor,
+        anchor + (rect.bottomRight - anchor) * _resizeScale,
+      );
+    }
+    return rect.shift(_dragDelta);
+  }
+
+  /// Where the resize handle of the selection is drawn.
+  Offset? get selectionHandle => selectionBounds?.inflate(10).bottomRight;
 
   Color get activeColor =>
       tool == InkTool.highlighter ? highlighterColor : penColor;
@@ -124,7 +151,15 @@ class InkController extends ChangeNotifier {
         _shapeStart = point.offset;
       case InkTool.lasso:
         final bounds = selectionBounds;
-        if (bounds != null && bounds.inflate(16).contains(point.offset)) {
+        final handle = selectionHandle;
+        if (bounds != null &&
+            handle != null &&
+            (handle - point.offset).distance <= handleReach) {
+          _dragStart = point.offset;
+          _resizeAnchor = bounds.topLeft;
+          _resizeHandle = handle;
+          _resizeScale = 1;
+        } else if (bounds != null && bounds.inflate(16).contains(point.offset)) {
           _dragStart = point.offset;
           _dragDelta = Offset.zero;
         } else {
@@ -149,6 +184,12 @@ class InkController extends ChangeNotifier {
       _shapeEnd = point.offset;
     } else if (_lassoPoints case final lasso?) {
       lasso.add(point.offset);
+    } else if (_resizeAnchor case final anchor?) {
+      final from = _resizeHandle! - anchor;
+      final to = point.offset - anchor;
+      final sx = from.dx.abs() < 1 ? 1.0 : to.dx / from.dx;
+      final sy = from.dy.abs() < 1 ? 1.0 : to.dy / from.dy;
+      _resizeScale = (sx > sy ? sx : sy).clamp(0.1, 10.0);
     } else if (_dragStart case final start?) {
       _dragDelta = point.offset - start;
     } else {
@@ -180,16 +221,31 @@ class InkController extends ChangeNotifier {
       _lassoPoints = null;
       _selection = _strokesInside(lasso);
       notifyListeners();
+    } else if (_resizeAnchor case final anchor?) {
+      final scale = _resizeScale;
+      _endDrag();
+      if ((scale - 1).abs() > 0.005) {
+        _replaceSelection((s) => s.scaleAbout(anchor, scale));
+      } else {
+        notifyListeners();
+      }
     } else if (_dragStart != null) {
       final delta = _dragDelta;
-      _dragStart = null;
-      _dragDelta = Offset.zero;
+      _endDrag();
       if (delta.distance > 0.5) {
         _replaceSelection((s) => s.translate(delta));
       } else {
         notifyListeners();
       }
     }
+  }
+
+  void _endDrag() {
+    _dragStart = null;
+    _dragDelta = Offset.zero;
+    _resizeAnchor = null;
+    _resizeHandle = null;
+    _resizeScale = 1;
   }
 
   /// Drops the gesture in progress, e.g. when a second finger starts a pinch.
@@ -202,8 +258,7 @@ class InkController extends ChangeNotifier {
     _beforeErase = null;
     _shapeStart = _shapeEnd = null;
     _lassoPoints = null;
-    _dragStart = null;
-    _dragDelta = Offset.zero;
+    _endDrag();
     notifyListeners();
   }
 
@@ -244,6 +299,13 @@ class InkController extends ChangeNotifier {
     _selection = {};
     _commit(next);
   }
+
+  /// Sets the line width of every selected stroke.
+  void setSelectionWidth(double width) =>
+      _replaceSelection((s) => s.copyWith(width: width));
+
+  /// Line width shared by the selection, or the first stroke's if mixed.
+  double? get selectionWidth => _selection.isEmpty ? null : _selection.first.width;
 
   void recolorSelection(Color color) =>
       _replaceSelection((s) => s.highlighter ? s : s.copyWith(color: color));

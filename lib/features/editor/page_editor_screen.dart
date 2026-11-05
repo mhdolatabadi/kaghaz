@@ -11,6 +11,8 @@ import '../ink/ink_canvas.dart';
 import '../ink/ink_controller.dart';
 import '../ink/ink_model.dart';
 import '../notebooks/notebook_screen.dart';
+import '../pdf/export_pdf.dart';
+import '../pdf/pdf_page_view.dart';
 import 'ink_toolbar.dart';
 
 const _wideLayout = 840.0;
@@ -124,11 +126,15 @@ class _PageEditorScreenState extends ConsumerState<PageEditorScreen> {
                   _db.duplicatePage(page.id);
                 case 'delete':
                   _deletePage(pages, index);
+                case 'export':
+                  exportNotebookPdf(context, ref, widget.notebookId);
               }
             },
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'duplicate', child: Text('کپی این صفحه')),
               PopupMenuItem(value: 'delete', child: Text('حذف این صفحه')),
+              PopupMenuDivider(),
+              PopupMenuItem(value: 'export', child: Text('خروجی PDF از دفترچه')),
             ],
           ),
           const SizedBox(width: 4),
@@ -197,7 +203,7 @@ class _PagePanel extends ConsumerWidget {
                 child: Column(
                   children: [
                     AspectRatio(
-                      aspectRatio: pageSize.width / pageSize.height,
+                      aspectRatio: p.width / p.height,
                       child: DecoratedBox(
                         position: DecorationPosition.foreground,
                         decoration: BoxDecoration(
@@ -323,7 +329,16 @@ class _InkPageEditorState extends ConsumerState<InkPageEditor>
       child: InkCanvas(
         controller: _controller,
         background: _background,
+        size: pageSizeOf(widget.page),
         topInset: compact ? 12 : 84,
+        underlay: widget.page.pdfId == null
+            ? null
+            : PdfPageView(
+                pdfId: widget.page.pdfId!,
+                page: widget.page.pdfPage ?? 0,
+                // Sharp at about 1.5x zoom without holding huge bitmaps.
+                pixelWidth: (widget.page.width * 1.5).round(),
+              ),
       ),
     );
     if (compact) {

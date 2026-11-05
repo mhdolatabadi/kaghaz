@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,8 @@ import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/pickers.dart';
 import '../notebooks/notebook_screen.dart';
 import 'notebook_dialog.dart';
+import '../pdf/import_pdf.dart';
+import '../pdf/pdf_service.dart';
 
 const _wideLayout = 840.0;
 
@@ -17,11 +20,46 @@ const _wideLayout = 840.0;
 ///
 /// Notebooks and folders can be dragged (long-press) onto a folder in the
 /// shelf, the sidebar, or the breadcrumb to move them.
-class LibraryScreen extends ConsumerWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+  StreamSubscription<PickedPdf>? _opened;
+
+  @override
+  void initState() {
+    super.initState();
+    // A PDF opened with Kaghaz from another app: offer to add it.
+    final files = ref.read(openedFilesProvider);
+    _opened = files.stream.listen(_offer);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (files.takeInitial() case final pdf?) _offer(pdf);
+    });
+  }
+
+  void _offer(PickedPdf pdf) {
+    if (!mounted) return;
+    final view = ref.read(libraryViewProvider);
+    offerPdfImport(
+      context,
+      ref,
+      pdf,
+      folderId: view is FolderView ? view.folderId : null,
+    );
+  }
+
+  @override
+  void dispose() {
+    _opened?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       final wide = constraints.maxWidth >= _wideLayout;
       return Scaffold(
@@ -424,6 +462,21 @@ class _NewButton extends ConsumerWidget {
           leadingIcon: const Icon(Icons.menu_book_outlined),
           onPressed: () => createNotebook(context, ref),
           child: const Text('دفترچه‌ی جدید'),
+        ),
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.picture_as_pdf_outlined),
+          onPressed: () async {
+            final pdf = await pickPdf();
+            if (pdf != null && context.mounted) {
+              await offerPdfImport(
+                context,
+                ref,
+                pdf,
+                folderId: view is FolderView ? view.folderId : null,
+              );
+            }
+          },
+          child: const Text('باز کردن PDF…'),
         ),
         if (view is FolderView)
           MenuItemButton(
