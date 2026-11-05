@@ -6,8 +6,8 @@ import 'ink_controller.dart';
 import 'ink_model.dart';
 import 'ink_painter.dart';
 
-/// Logical size of every page, roughly A4 proportions.
-const pageSize = Size(1240, 1754);
+/// Logical size of a page.
+Size pageSizeOf(NotePage page) => Size(page.width, page.height);
 
 /// A zoomable page that turns pointer input into strokes.
 ///
@@ -19,11 +19,17 @@ class InkCanvas extends StatefulWidget {
     super.key,
     required this.controller,
     required this.background,
+    required this.size,
+    this.underlay,
     this.topInset = 12,
   });
 
   final InkController controller;
   final PageBackground background;
+  final Size size;
+
+  /// Drawn under the paper pattern and ink, e.g. an imported PDF page.
+  final Widget? underlay;
 
   /// Space above the page at the initial fit, e.g. for a floating toolbar.
   final double topInset;
@@ -107,8 +113,9 @@ class _InkCanvasState extends State<InkCanvas> {
   void _fit(Size viewport) {
     if (_fittedTo == viewport) return;
     _fittedTo = viewport;
-    final scale = (viewport.width - 24) / pageSize.width;
-    final dx = (viewport.width - pageSize.width * scale) / 2;
+    final size = widget.size;
+    final scale = (viewport.width - 24) / size.width;
+    final dx = (viewport.width - size.width * scale) / 2;
     _transform.value = Matrix4.identity()
       ..translateByDouble(dx, widget.topInset, 0, 1)
       ..scaleByDouble(scale, scale, 1, 1);
@@ -137,8 +144,8 @@ class _InkCanvasState extends State<InkCanvas> {
               onPointerUp: _onUp,
               onPointerCancel: _onUp,
               child: Container(
-                width: pageSize.width,
-                height: pageSize.height,
+                width: widget.size.width,
+                height: widget.size.height,
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   boxShadow: [BoxShadow(blurRadius: 12, color: Color(0x33000000))],
@@ -146,6 +153,7 @@ class _InkCanvasState extends State<InkCanvas> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
+                    ?widget.underlay,
                     CustomPaint(
                       painter: PaperPainter(
                         widget.background,

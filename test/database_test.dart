@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kaghaz/core/db/database.dart';
@@ -90,5 +90,52 @@ void main() {
     expect([for (final p in await db.getPages(a)) p.position], [0, 1, 2]);
     expect(ids(await db.getPages(b)).last, p0);
     expect((await db.watchPageCounts().first)[b], 2);
+  });
+
+  test('importing a PDF makes sized pages; blank pages inserted between match', () async {
+    final bytes = Uint8List.fromList(List.filled(16, 1));
+    final nb = await db.importPdf(
+      name: 'مقاله',
+      bytes: bytes,
+      pages: const [PdfPageSize(612, 792), PdfPageSize(842, 595)],
+    );
+    final pages = await db.getPages(nb);
+    expect(pages, hasLength(2));
+    expect(pages[0].pdfPage, 0);
+    expect(pages[1].pdfPage, 1);
+    expect(pages[0].height, closeTo(defaultPageWidth * 792 / 612, 0.01));
+    expect(pages[1].height, closeTo(defaultPageWidth * 595 / 842, 0.01));
+    expect((await db.watchNotebook(nb).first)!.defaultBackground, PageBackground.blank);
+
+    final blank = await db.addPage(nb, PageKind.ink, afterPosition: 0);
+    final inserted = await db.getPage(blank);
+    expect(inserted.pdfId, isNull);
+    expect(inserted.height, pages[0].height);
+    expect([for (final p in await db.getPages(nb)) p.id], [pages[0].id, blank, pages[1].id]);
+
+    // Appending to an existing notebook keeps its pages first.
+    await db.importPdf(
+      name: 'پیوست',
+      bytes: bytes,
+      pages: const [PdfPageSize(100, 100)],
+      notebookId: nb,
+    );
+    expect((await db.getPages(nb)).last.height, defaultPageWidth);
+  });
+
+  test('stored PDFs are removed once no page uses them', () async {
+    final bytes = Uint8List.fromList([1, 2, 3]);
+    final nb = await db.importPdf(
+      name: 'الف',
+      bytes: bytes,
+      pages: const [PdfPageSize(100, 100)],
+    );
+    final copy = await db.duplicatePage((await db.getPages(nb)).single.id);
+    expect((await db.getPage(copy)).pdfId, isNotNull);
+
+    await db.deletePage((await db.getPages(nb)).first);
+    expect(await db.select(db.pdfFiles).get(), hasLength(1));
+    await db.deleteNotebook(nb);
+    expect(await db.select(db.pdfFiles).get(), isEmpty);
   });
 }

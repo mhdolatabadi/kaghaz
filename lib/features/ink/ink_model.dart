@@ -44,10 +44,10 @@ class Stroke {
   /// Drawn with straight segments, for shapes with corners.
   final bool straight;
 
-  Stroke copyWith({List<InkPoint>? points, Color? color}) => Stroke(
+  Stroke copyWith({List<InkPoint>? points, Color? color, double? width}) => Stroke(
         points: points ?? this.points,
         color: color ?? this.color,
-        width: width,
+        width: width ?? this.width,
         highlighter: highlighter,
         pressure: pressure,
         straight: straight,
@@ -55,6 +55,16 @@ class Stroke {
 
   Stroke translate(Offset delta) => copyWith(points: [
         for (final p in points) InkPoint(p.x + delta.dx, p.y + delta.dy, p.pressure),
+      ]);
+
+  /// Scales the stroke's outline about [anchor]; line width is unchanged.
+  Stroke scaleAbout(Offset anchor, double factor) => copyWith(points: [
+        for (final p in points)
+          InkPoint(
+            anchor.dx + (p.x - anchor.dx) * factor,
+            anchor.dy + (p.y - anchor.dy) * factor,
+            p.pressure,
+          ),
       ]);
 
   Rect get bounds {

@@ -858,6 +858,300 @@ class NotebooksCompanion extends UpdateCompanion<Notebook> {
   }
 }
 
+class $PdfFilesTable extends PdfFiles with TableInfo<$PdfFilesTable, PdfFile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PdfFilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bytesMeta = const VerificationMeta('bytes');
+  @override
+  late final GeneratedColumn<Uint8List> bytes = GeneratedColumn<Uint8List>(
+    'bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, bytes, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pdf_files';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PdfFile> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('bytes')) {
+      context.handle(
+        _bytesMeta,
+        bytes.isAcceptableOrUnknown(data['bytes']!, _bytesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bytesMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PdfFile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PdfFile(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      bytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}bytes'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PdfFilesTable createAlias(String alias) {
+    return $PdfFilesTable(attachedDatabase, alias);
+  }
+}
+
+class PdfFile extends DataClass implements Insertable<PdfFile> {
+  final int id;
+  final String name;
+  final Uint8List bytes;
+  final DateTime createdAt;
+  const PdfFile({
+    required this.id,
+    required this.name,
+    required this.bytes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['bytes'] = Variable<Uint8List>(bytes);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PdfFilesCompanion toCompanion(bool nullToAbsent) {
+    return PdfFilesCompanion(
+      id: Value(id),
+      name: Value(name),
+      bytes: Value(bytes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PdfFile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PdfFile(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      bytes: serializer.fromJson<Uint8List>(json['bytes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'bytes': serializer.toJson<Uint8List>(bytes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PdfFile copyWith({
+    int? id,
+    String? name,
+    Uint8List? bytes,
+    DateTime? createdAt,
+  }) => PdfFile(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    bytes: bytes ?? this.bytes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PdfFile copyWithCompanion(PdfFilesCompanion data) {
+    return PdfFile(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      bytes: data.bytes.present ? data.bytes.value : this.bytes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PdfFile(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bytes: $bytes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, $driftBlobEquality.hash(bytes), createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PdfFile &&
+          other.id == this.id &&
+          other.name == this.name &&
+          $driftBlobEquality.equals(other.bytes, this.bytes) &&
+          other.createdAt == this.createdAt);
+}
+
+class PdfFilesCompanion extends UpdateCompanion<PdfFile> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<Uint8List> bytes;
+  final Value<DateTime> createdAt;
+  const PdfFilesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.bytes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PdfFilesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required Uint8List bytes,
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name),
+       bytes = Value(bytes);
+  static Insertable<PdfFile> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<Uint8List>? bytes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (bytes != null) 'bytes': bytes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PdfFilesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<Uint8List>? bytes,
+    Value<DateTime>? createdAt,
+  }) {
+    return PdfFilesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      bytes: bytes ?? this.bytes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (bytes.present) {
+      map['bytes'] = Variable<Uint8List>(bytes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PdfFilesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('bytes: $bytes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $NotePagesTable extends NotePages
     with TableInfo<$NotePagesTable, NotePage> {
   @override
@@ -941,6 +1235,49 @@ class $NotePagesTable extends NotePages
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _widthMeta = const VerificationMeta('width');
+  @override
+  late final GeneratedColumn<double> width = GeneratedColumn<double>(
+    'width',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(defaultPageWidth),
+  );
+  static const VerificationMeta _heightMeta = const VerificationMeta('height');
+  @override
+  late final GeneratedColumn<double> height = GeneratedColumn<double>(
+    'height',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(defaultPageHeight),
+  );
+  static const VerificationMeta _pdfIdMeta = const VerificationMeta('pdfId');
+  @override
+  late final GeneratedColumn<int> pdfId = GeneratedColumn<int>(
+    'pdf_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES pdf_files (id) ON DELETE SET NULL',
+    ),
+  );
+  static const VerificationMeta _pdfPageMeta = const VerificationMeta(
+    'pdfPage',
+  );
+  @override
+  late final GeneratedColumn<int> pdfPage = GeneratedColumn<int>(
+    'pdf_page',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -962,6 +1299,10 @@ class $NotePagesTable extends NotePages
     background,
     ink,
     body,
+    width,
+    height,
+    pdfId,
+    pdfPage,
     updatedAt,
   ];
   @override
@@ -1005,6 +1346,30 @@ class $NotePagesTable extends NotePages
       context.handle(
         _bodyMeta,
         body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    }
+    if (data.containsKey('width')) {
+      context.handle(
+        _widthMeta,
+        width.isAcceptableOrUnknown(data['width']!, _widthMeta),
+      );
+    }
+    if (data.containsKey('height')) {
+      context.handle(
+        _heightMeta,
+        height.isAcceptableOrUnknown(data['height']!, _heightMeta),
+      );
+    }
+    if (data.containsKey('pdf_id')) {
+      context.handle(
+        _pdfIdMeta,
+        pdfId.isAcceptableOrUnknown(data['pdf_id']!, _pdfIdMeta),
+      );
+    }
+    if (data.containsKey('pdf_page')) {
+      context.handle(
+        _pdfPageMeta,
+        pdfPage.isAcceptableOrUnknown(data['pdf_page']!, _pdfPageMeta),
       );
     }
     if (data.containsKey('updated_at')) {
@@ -1054,6 +1419,22 @@ class $NotePagesTable extends NotePages
         DriftSqlType.string,
         data['${effectivePrefix}body'],
       )!,
+      width: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}width'],
+      )!,
+      height: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}height'],
+      )!,
+      pdfId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pdf_id'],
+      ),
+      pdfPage: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pdf_page'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -1086,6 +1467,14 @@ class NotePage extends DataClass implements Insertable<NotePage> {
 
   /// Typed content for text pages.
   final String body;
+
+  /// Page size in logical units; PDF pages keep their own aspect ratio.
+  final double width;
+  final double height;
+
+  /// The PDF drawn behind the ink, and which of its pages (0-based).
+  final int? pdfId;
+  final int? pdfPage;
   final DateTime updatedAt;
   const NotePage({
     required this.id,
@@ -1095,6 +1484,10 @@ class NotePage extends DataClass implements Insertable<NotePage> {
     required this.background,
     required this.ink,
     required this.body,
+    required this.width,
+    required this.height,
+    this.pdfId,
+    this.pdfPage,
     required this.updatedAt,
   });
   @override
@@ -1115,6 +1508,14 @@ class NotePage extends DataClass implements Insertable<NotePage> {
     }
     map['ink'] = Variable<String>(ink);
     map['body'] = Variable<String>(body);
+    map['width'] = Variable<double>(width);
+    map['height'] = Variable<double>(height);
+    if (!nullToAbsent || pdfId != null) {
+      map['pdf_id'] = Variable<int>(pdfId);
+    }
+    if (!nullToAbsent || pdfPage != null) {
+      map['pdf_page'] = Variable<int>(pdfPage);
+    }
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -1128,6 +1529,14 @@ class NotePage extends DataClass implements Insertable<NotePage> {
       background: Value(background),
       ink: Value(ink),
       body: Value(body),
+      width: Value(width),
+      height: Value(height),
+      pdfId: pdfId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pdfId),
+      pdfPage: pdfPage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pdfPage),
       updatedAt: Value(updatedAt),
     );
   }
@@ -1149,6 +1558,10 @@ class NotePage extends DataClass implements Insertable<NotePage> {
       ),
       ink: serializer.fromJson<String>(json['ink']),
       body: serializer.fromJson<String>(json['body']),
+      width: serializer.fromJson<double>(json['width']),
+      height: serializer.fromJson<double>(json['height']),
+      pdfId: serializer.fromJson<int?>(json['pdfId']),
+      pdfPage: serializer.fromJson<int?>(json['pdfPage']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -1167,6 +1580,10 @@ class NotePage extends DataClass implements Insertable<NotePage> {
       ),
       'ink': serializer.toJson<String>(ink),
       'body': serializer.toJson<String>(body),
+      'width': serializer.toJson<double>(width),
+      'height': serializer.toJson<double>(height),
+      'pdfId': serializer.toJson<int?>(pdfId),
+      'pdfPage': serializer.toJson<int?>(pdfPage),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -1179,6 +1596,10 @@ class NotePage extends DataClass implements Insertable<NotePage> {
     PageBackground? background,
     String? ink,
     String? body,
+    double? width,
+    double? height,
+    Value<int?> pdfId = const Value.absent(),
+    Value<int?> pdfPage = const Value.absent(),
     DateTime? updatedAt,
   }) => NotePage(
     id: id ?? this.id,
@@ -1188,6 +1609,10 @@ class NotePage extends DataClass implements Insertable<NotePage> {
     background: background ?? this.background,
     ink: ink ?? this.ink,
     body: body ?? this.body,
+    width: width ?? this.width,
+    height: height ?? this.height,
+    pdfId: pdfId.present ? pdfId.value : this.pdfId,
+    pdfPage: pdfPage.present ? pdfPage.value : this.pdfPage,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   NotePage copyWithCompanion(NotePagesCompanion data) {
@@ -1203,6 +1628,10 @@ class NotePage extends DataClass implements Insertable<NotePage> {
           : this.background,
       ink: data.ink.present ? data.ink.value : this.ink,
       body: data.body.present ? data.body.value : this.body,
+      width: data.width.present ? data.width.value : this.width,
+      height: data.height.present ? data.height.value : this.height,
+      pdfId: data.pdfId.present ? data.pdfId.value : this.pdfId,
+      pdfPage: data.pdfPage.present ? data.pdfPage.value : this.pdfPage,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -1217,6 +1646,10 @@ class NotePage extends DataClass implements Insertable<NotePage> {
           ..write('background: $background, ')
           ..write('ink: $ink, ')
           ..write('body: $body, ')
+          ..write('width: $width, ')
+          ..write('height: $height, ')
+          ..write('pdfId: $pdfId, ')
+          ..write('pdfPage: $pdfPage, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -1231,6 +1664,10 @@ class NotePage extends DataClass implements Insertable<NotePage> {
     background,
     ink,
     body,
+    width,
+    height,
+    pdfId,
+    pdfPage,
     updatedAt,
   );
   @override
@@ -1244,6 +1681,10 @@ class NotePage extends DataClass implements Insertable<NotePage> {
           other.background == this.background &&
           other.ink == this.ink &&
           other.body == this.body &&
+          other.width == this.width &&
+          other.height == this.height &&
+          other.pdfId == this.pdfId &&
+          other.pdfPage == this.pdfPage &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -1255,6 +1696,10 @@ class NotePagesCompanion extends UpdateCompanion<NotePage> {
   final Value<PageBackground> background;
   final Value<String> ink;
   final Value<String> body;
+  final Value<double> width;
+  final Value<double> height;
+  final Value<int?> pdfId;
+  final Value<int?> pdfPage;
   final Value<DateTime> updatedAt;
   const NotePagesCompanion({
     this.id = const Value.absent(),
@@ -1264,6 +1709,10 @@ class NotePagesCompanion extends UpdateCompanion<NotePage> {
     this.background = const Value.absent(),
     this.ink = const Value.absent(),
     this.body = const Value.absent(),
+    this.width = const Value.absent(),
+    this.height = const Value.absent(),
+    this.pdfId = const Value.absent(),
+    this.pdfPage = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   NotePagesCompanion.insert({
@@ -1274,6 +1723,10 @@ class NotePagesCompanion extends UpdateCompanion<NotePage> {
     this.background = const Value.absent(),
     this.ink = const Value.absent(),
     this.body = const Value.absent(),
+    this.width = const Value.absent(),
+    this.height = const Value.absent(),
+    this.pdfId = const Value.absent(),
+    this.pdfPage = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : notebookId = Value(notebookId),
        position = Value(position),
@@ -1286,6 +1739,10 @@ class NotePagesCompanion extends UpdateCompanion<NotePage> {
     Expression<String>? background,
     Expression<String>? ink,
     Expression<String>? body,
+    Expression<double>? width,
+    Expression<double>? height,
+    Expression<int>? pdfId,
+    Expression<int>? pdfPage,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -1296,6 +1753,10 @@ class NotePagesCompanion extends UpdateCompanion<NotePage> {
       if (background != null) 'background': background,
       if (ink != null) 'ink': ink,
       if (body != null) 'body': body,
+      if (width != null) 'width': width,
+      if (height != null) 'height': height,
+      if (pdfId != null) 'pdf_id': pdfId,
+      if (pdfPage != null) 'pdf_page': pdfPage,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -1308,6 +1769,10 @@ class NotePagesCompanion extends UpdateCompanion<NotePage> {
     Value<PageBackground>? background,
     Value<String>? ink,
     Value<String>? body,
+    Value<double>? width,
+    Value<double>? height,
+    Value<int?>? pdfId,
+    Value<int?>? pdfPage,
     Value<DateTime>? updatedAt,
   }) {
     return NotePagesCompanion(
@@ -1318,6 +1783,10 @@ class NotePagesCompanion extends UpdateCompanion<NotePage> {
       background: background ?? this.background,
       ink: ink ?? this.ink,
       body: body ?? this.body,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      pdfId: pdfId ?? this.pdfId,
+      pdfPage: pdfPage ?? this.pdfPage,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -1350,6 +1819,18 @@ class NotePagesCompanion extends UpdateCompanion<NotePage> {
     if (body.present) {
       map['body'] = Variable<String>(body.value);
     }
+    if (width.present) {
+      map['width'] = Variable<double>(width.value);
+    }
+    if (height.present) {
+      map['height'] = Variable<double>(height.value);
+    }
+    if (pdfId.present) {
+      map['pdf_id'] = Variable<int>(pdfId.value);
+    }
+    if (pdfPage.present) {
+      map['pdf_page'] = Variable<int>(pdfPage.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -1366,6 +1847,10 @@ class NotePagesCompanion extends UpdateCompanion<NotePage> {
           ..write('background: $background, ')
           ..write('ink: $ink, ')
           ..write('body: $body, ')
+          ..write('width: $width, ')
+          ..write('height: $height, ')
+          ..write('pdfId: $pdfId, ')
+          ..write('pdfPage: $pdfPage, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -1377,6 +1862,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $FoldersTable folders = $FoldersTable(this);
   late final $NotebooksTable notebooks = $NotebooksTable(this);
+  late final $PdfFilesTable pdfFiles = $PdfFilesTable(this);
   late final $NotePagesTable notePages = $NotePagesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -1385,6 +1871,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     folders,
     notebooks,
+    pdfFiles,
     notePages,
   ];
   @override
@@ -1409,6 +1896,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('note_pages', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'pdf_files',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('note_pages', kind: UpdateKind.update)],
     ),
   ]);
 }
@@ -2262,6 +2756,280 @@ typedef $$NotebooksTableProcessedTableManager =
       Notebook,
       PrefetchHooks Function({bool folderId, bool notePagesRefs})
     >;
+typedef $$PdfFilesTableCreateCompanionBuilder = PdfFilesCompanion Function({
+  Value<int> id,
+  required String name,
+  required Uint8List bytes,
+  Value<DateTime> createdAt,
+});
+typedef $$PdfFilesTableUpdateCompanionBuilder = PdfFilesCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<Uint8List> bytes,
+  Value<DateTime> createdAt,
+});
+
+final class $$PdfFilesTableReferences
+    extends BaseReferences<_$AppDatabase, $PdfFilesTable, PdfFile> {
+  $$PdfFilesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$NotePagesTable, List<NotePage>>
+  _notePagesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.notePages,
+    aliasName: 'pdf_files__id__note_pages__pdf_id',
+  );
+
+  $$NotePagesTableProcessedTableManager get notePagesRefs {
+    final manager = $$NotePagesTableTableManager(
+      $_db,
+      $_db.notePages,
+    ).filter((f) => f.pdfId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_notePagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PdfFilesTableFilterComposer
+    extends Composer<_$AppDatabase, $PdfFilesTable> {
+  $$PdfFilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> notePagesRefs(
+    Expression<bool> Function($$NotePagesTableFilterComposer f) f,
+  ) {
+    final $$NotePagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.notePages,
+      getReferencedColumn: (t) => t.pdfId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotePagesTableFilterComposer(
+            $db: $db,
+            $table: $db.notePages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PdfFilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PdfFilesTable> {
+  $$PdfFilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PdfFilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PdfFilesTable> {
+  $$PdfFilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> notePagesRefs<T extends Object>(
+    Expression<T> Function($$NotePagesTableAnnotationComposer a) f,
+  ) {
+    final $$NotePagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.notePages,
+      getReferencedColumn: (t) => t.pdfId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotePagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.notePages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PdfFilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PdfFilesTable,
+          PdfFile,
+          $$PdfFilesTableFilterComposer,
+          $$PdfFilesTableOrderingComposer,
+          $$PdfFilesTableAnnotationComposer,
+          $$PdfFilesTableCreateCompanionBuilder,
+          $$PdfFilesTableUpdateCompanionBuilder,
+          (PdfFile, $$PdfFilesTableReferences),
+          PdfFile,
+          PrefetchHooks Function({bool notePagesRefs})
+        > {
+  $$PdfFilesTableTableManager(_$AppDatabase db, $PdfFilesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PdfFilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PdfFilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PdfFilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<Uint8List> bytes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PdfFilesCompanion(
+                id: id,
+                name: name,
+                bytes: bytes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required Uint8List bytes,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PdfFilesCompanion.insert(
+                id: id,
+                name: name,
+                bytes: bytes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PdfFilesTable, PdfFile>(table),
+                  $$PdfFilesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({notePagesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (notePagesRefs) db.notePages],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (notePagesRefs)
+                    await $_getPrefetchedDataByColumns<
+                      PdfFile,
+                      $PdfFilesTable,
+                      NotePage,
+                      $NotePagesTable
+                    >(
+                      currentTable: table,
+                      referencedTable: $$PdfFilesTableReferences
+                          ._notePagesRefsTable(db),
+                      managerFromTypedResult: (p0) => $$PdfFilesTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).notePagesRefs,
+                      currentColumn: 'id',
+                      referencedColumn: 'pdf_id',
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PdfFilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PdfFilesTable,
+      PdfFile,
+      $$PdfFilesTableFilterComposer,
+      $$PdfFilesTableOrderingComposer,
+      $$PdfFilesTableAnnotationComposer,
+      $$PdfFilesTableCreateCompanionBuilder,
+      $$PdfFilesTableUpdateCompanionBuilder,
+      (PdfFile, $$PdfFilesTableReferences),
+      PdfFile,
+      PrefetchHooks Function({bool notePagesRefs})
+    >;
 typedef $$NotePagesTableCreateCompanionBuilder = NotePagesCompanion Function({
   Value<int> id,
   required int notebookId,
@@ -2270,6 +3038,10 @@ typedef $$NotePagesTableCreateCompanionBuilder = NotePagesCompanion Function({
   Value<PageBackground> background,
   Value<String> ink,
   Value<String> body,
+  Value<double> width,
+  Value<double> height,
+  Value<int?> pdfId,
+  Value<int?> pdfPage,
   Value<DateTime> updatedAt,
 });
 typedef $$NotePagesTableUpdateCompanionBuilder = NotePagesCompanion Function({
@@ -2280,6 +3052,10 @@ typedef $$NotePagesTableUpdateCompanionBuilder = NotePagesCompanion Function({
   Value<PageBackground> background,
   Value<String> ink,
   Value<String> body,
+  Value<double> width,
+  Value<double> height,
+  Value<int?> pdfId,
+  Value<int?> pdfPage,
   Value<DateTime> updatedAt,
 });
 
@@ -2298,6 +3074,23 @@ final class $$NotePagesTableReferences
       $_db.notebooks,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_notebookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PdfFilesTable _pdfIdTable(_$AppDatabase db) =>
+      db.pdfFiles.createAlias('note_pages__pdf_id__pdf_files__id');
+
+  $$PdfFilesTableProcessedTableManager? get pdfId {
+    final $_column = $_itemColumn<int>('pdf_id');
+    if ($_column == null) return null;
+    final manager = $$PdfFilesTableTableManager(
+      $_db,
+      $_db.pdfFiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_pdfIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -2346,6 +3139,21 @@ class $$NotePagesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get width => $composableBuilder(
+    column: $table.width,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get height => $composableBuilder(
+    column: $table.height,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pdfPage => $composableBuilder(
+    column: $table.pdfPage,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
@@ -2365,6 +3173,29 @@ class $$NotePagesTableFilterComposer
           }) => $$NotebooksTableFilterComposer(
             $db: $db,
             $table: $db.notebooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PdfFilesTableFilterComposer get pdfId {
+    final $$PdfFilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.pdfId,
+      referencedTable: $db.pdfFiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PdfFilesTableFilterComposer(
+            $db: $db,
+            $table: $db.pdfFiles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2414,6 +3245,21 @@ class $$NotePagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get width => $composableBuilder(
+    column: $table.width,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get height => $composableBuilder(
+    column: $table.height,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pdfPage => $composableBuilder(
+    column: $table.pdfPage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -2433,6 +3279,29 @@ class $$NotePagesTableOrderingComposer
           }) => $$NotebooksTableOrderingComposer(
             $db: $db,
             $table: $db.notebooks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PdfFilesTableOrderingComposer get pdfId {
+    final $$PdfFilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.pdfId,
+      referencedTable: $db.pdfFiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PdfFilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.pdfFiles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2473,6 +3342,15 @@ class $$NotePagesTableAnnotationComposer
   GeneratedColumn<String> get body =>
       $composableBuilder(column: $table.body, builder: (column) => column);
 
+  GeneratedColumn<double> get width =>
+      $composableBuilder(column: $table.width, builder: (column) => column);
+
+  GeneratedColumn<double> get height =>
+      $composableBuilder(column: $table.height, builder: (column) => column);
+
+  GeneratedColumn<int> get pdfPage =>
+      $composableBuilder(column: $table.pdfPage, builder: (column) => column);
+
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
@@ -2498,6 +3376,29 @@ class $$NotePagesTableAnnotationComposer
     );
     return composer;
   }
+
+  $$PdfFilesTableAnnotationComposer get pdfId {
+    final $$PdfFilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.pdfId,
+      referencedTable: $db.pdfFiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PdfFilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.pdfFiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$NotePagesTableTableManager
@@ -2513,7 +3414,7 @@ class $$NotePagesTableTableManager
           $$NotePagesTableUpdateCompanionBuilder,
           (NotePage, $$NotePagesTableReferences),
           NotePage,
-          PrefetchHooks Function({bool notebookId})
+          PrefetchHooks Function({bool notebookId, bool pdfId})
         > {
   $$NotePagesTableTableManager(_$AppDatabase db, $NotePagesTable table)
     : super(
@@ -2535,6 +3436,10 @@ class $$NotePagesTableTableManager
                 Value<PageBackground> background = const Value.absent(),
                 Value<String> ink = const Value.absent(),
                 Value<String> body = const Value.absent(),
+                Value<double> width = const Value.absent(),
+                Value<double> height = const Value.absent(),
+                Value<int?> pdfId = const Value.absent(),
+                Value<int?> pdfPage = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => NotePagesCompanion(
                 id: id,
@@ -2544,6 +3449,10 @@ class $$NotePagesTableTableManager
                 background: background,
                 ink: ink,
                 body: body,
+                width: width,
+                height: height,
+                pdfId: pdfId,
+                pdfPage: pdfPage,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -2555,6 +3464,10 @@ class $$NotePagesTableTableManager
                 Value<PageBackground> background = const Value.absent(),
                 Value<String> ink = const Value.absent(),
                 Value<String> body = const Value.absent(),
+                Value<double> width = const Value.absent(),
+                Value<double> height = const Value.absent(),
+                Value<int?> pdfId = const Value.absent(),
+                Value<int?> pdfPage = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => NotePagesCompanion.insert(
                 id: id,
@@ -2564,6 +3477,10 @@ class $$NotePagesTableTableManager
                 background: background,
                 ink: ink,
                 body: body,
+                width: width,
+                height: height,
+                pdfId: pdfId,
+                pdfPage: pdfPage,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -2574,7 +3491,7 @@ class $$NotePagesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({notebookId = false}) {
+          prefetchHooksCallback: ({notebookId = false, pdfId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -2605,6 +3522,18 @@ class $$NotePagesTableTableManager
                             .id,
                       ) as T;
                     }
+                    if (pdfId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.pdfId,
+                        referencedTable: $$NotePagesTableReferences._pdfIdTable(
+                          db,
+                        ),
+                        referencedColumn: $$NotePagesTableReferences
+                            ._pdfIdTable(db)
+                            .id,
+                      ) as T;
+                    }
 
                     return state;
                   },
@@ -2629,7 +3558,7 @@ typedef $$NotePagesTableProcessedTableManager =
       $$NotePagesTableUpdateCompanionBuilder,
       (NotePage, $$NotePagesTableReferences),
       NotePage,
-      PrefetchHooks Function({bool notebookId})
+      PrefetchHooks Function({bool notebookId, bool pdfId})
     >;
 
 class $AppDatabaseManager {
@@ -2639,6 +3568,8 @@ class $AppDatabaseManager {
       $$FoldersTableTableManager(_db, _db.folders);
   $$NotebooksTableTableManager get notebooks =>
       $$NotebooksTableTableManager(_db, _db.notebooks);
+  $$PdfFilesTableTableManager get pdfFiles =>
+      $$PdfFilesTableTableManager(_db, _db.pdfFiles);
   $$NotePagesTableTableManager get notePages =>
       $$NotePagesTableTableManager(_db, _db.notePages);
 }

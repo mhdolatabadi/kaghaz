@@ -58,6 +58,11 @@ class LivePainter extends CustomPainter {
       final r = RRect.fromRectAndRadius(rect.inflate(10), const Radius.circular(8));
       canvas.drawRRect(r, Paint()..color = accent.withValues(alpha: 0.06));
       canvas.drawPath(_dashed(Path()..addRRect(r)), outline);
+      // Resize handle at the bottom-right corner.
+      final handle = r.outerRect.bottomRight;
+      canvas.drawCircle(handle, 11, Paint()..color = const Color(0xFFFFFFFF));
+      canvas.drawCircle(handle, 11, outline..strokeWidth = 2.5);
+      canvas.drawCircle(handle, 4, Paint()..color = accent);
     }
   }
 

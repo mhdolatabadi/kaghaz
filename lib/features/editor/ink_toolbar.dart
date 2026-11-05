@@ -508,6 +508,22 @@ class SelectionBar extends StatelessWidget {
                               icon: const Icon(Icons.palette_outlined),
                             ),
                           ),
+                          MenuAnchor(
+                            menuChildren: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                                child: SizedBox(
+                                  width: 240,
+                                  child: _SelectionWidth(controller: c),
+                                ),
+                              ),
+                            ],
+                            builder: (context, menu, _) => IconButton(
+                              tooltip: 'ضخامت خط',
+                              onPressed: () => menu.isOpen ? menu.close() : menu.open(),
+                              icon: const Icon(Icons.line_weight),
+                            ),
+                          ),
                           IconButton(
                             tooltip: 'حذف',
                             onPressed: c.deleteSelection,
@@ -525,6 +541,42 @@ class SelectionBar extends StatelessWidget {
                 ),
         );
       },
+    );
+  }
+}
+
+/// Slider that sets the line width of the selected strokes on release, so a
+/// drag is one undo step.
+class _SelectionWidth extends StatefulWidget {
+  const _SelectionWidth({required this.controller});
+
+  final InkController controller;
+
+  @override
+  State<_SelectionWidth> createState() => _SelectionWidthState();
+}
+
+class _SelectionWidthState extends State<_SelectionWidth> {
+  late double _value = (widget.controller.selectionWidth ?? 3).clamp(1, 40);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'ضخامت خط‌های انتخاب‌شده: ${fa(_value.round())}',
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        Slider(
+          value: _value,
+          min: 1,
+          max: 40,
+          onChanged: (v) => setState(() => _value = v),
+          onChangeEnd: widget.controller.setSelectionWidth,
+        ),
+      ],
     );
   }
 }

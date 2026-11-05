@@ -12,6 +12,10 @@ import '../editor/page_editor_screen.dart';
 import '../ink/ink_canvas.dart';
 import '../ink/ink_model.dart';
 import '../ink/ink_painter.dart';
+import '../pdf/export_pdf.dart';
+import '../pdf/import_pdf.dart';
+import '../pdf/pdf_page_view.dart';
+import '../pdf/pdf_service.dart';
 
 /// The pages of one notebook as a grid of thumbnails.
 ///
@@ -58,6 +62,14 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
 
   Future<void> _onAction(NotePage page, int number, String action) async {
     switch (action) {
+      case 'insert':
+        final id = await _db.addPage(
+          widget.notebookId,
+          PageKind.ink,
+          background: PageBackground.blank,
+          afterPosition: page.position,
+        );
+        if (mounted) _open(id);
       case 'duplicate':
         await _db.duplicatePage(page.id);
       case 'move':
@@ -103,9 +115,27 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
             Flexible(child: Text(notebook?.title ?? '')),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'خروجی PDF',
+            onPressed: () => exportNotebookPdf(context, ref, widget.notebookId),
+            icon: const Icon(Icons.ios_share),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       floatingActionButton: MenuAnchor(
         menuChildren: [
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: () async {
+              final pdf = await pickPdf();
+              if (pdf != null && context.mounted) {
+                await offerPdfImport(context, ref, pdf, notebookId: widget.notebookId);
+              }
+            },
+            child: const Text('افزودن صفحه از PDF…'),
+          ),
           MenuItemButton(
             leadingIcon: const Icon(Icons.draw_outlined),
             onPressed: () => _add(PageKind.ink),
@@ -155,7 +185,7 @@ class _NotebookScreenState extends ConsumerState<NotebookScreen> {
                     padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
-                      childAspectRatio: pageSize.width / (pageSize.height + 160),
+                      childAspectRatio: defaultPageWidth / (defaultPageHeight + 160),
                       mainAxisSpacing: 20,
                       crossAxisSpacing: 20,
                     ),
@@ -207,7 +237,7 @@ class _ReorderablePage extends StatelessWidget {
           delay: const Duration(milliseconds: 250),
           feedback: SizedBox(
             width: 130,
-            height: 130 * pageSize.height / pageSize.width,
+            height: 130 * page.height / page.width,
             child: Opacity(opacity: 0.85, child: thumb),
           ),
           childWhenDragging: Opacity(opacity: 0.25, child: _tile(context, thumb)),
@@ -254,6 +284,7 @@ class _ReorderablePage extends StatelessWidget {
               iconSize: 20,
               onSelected: onAction,
               itemBuilder: (_) => const [
+                PopupMenuItem(value: 'insert', child: Text('افزودن صفحه‌ی خالی بعد از این')),
                 PopupMenuItem(value: 'duplicate', child: Text('کپی صفحه')),
                 PopupMenuItem(value: 'move', child: Text('انتقال به دفترچه‌ی دیگر…')),
                 PopupMenuItem(value: 'delete', child: Text('حذف')),
@@ -275,45 +306,58 @@ class PageThumbnail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    final size = pageSizeOf(page);
+    return Center(
+      child: AspectRatio(
+        aspectRatio: size.width / size.height,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
           ),
-        ],
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: FittedBox(
-        child: SizedBox.fromSize(
-          size: pageSize,
-          child: CustomPaint(
-            painter: PaperPainter(
-              page.background,
-              lineColor: scheme.primary.withValues(alpha: 0.18),
-            ),
-            foregroundPainter: page.kind == PageKind.ink
-                ? StrokesPainter(InkDocument.decode(page.ink))
-                : null,
-            child: page.kind == PageKind.text
-                ? Padding(
-                    padding: const EdgeInsets.all(80),
-                    child: Text(
-                      page.body,
-                      overflow: TextOverflow.fade,
-                      style: const TextStyle(
-                        fontSize: 40,
-                        height: 1.6,
-                        color: Colors.black87,
-                      ),
+          clipBehavior: Clip.antiAlias,
+          child: FittedBox(
+            child: SizedBox.fromSize(
+              size: size,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (page.pdfId case final pdfId?)
+                    PdfPageView(pdfId: pdfId, page: page.pdfPage ?? 0, pixelWidth: 320),
+                  CustomPaint(
+                    painter: PaperPainter(
+                      page.background,
+                      lineColor: scheme.primary.withValues(alpha: 0.18),
                     ),
-                  )
-                : null,
+                    foregroundPainter: page.kind == PageKind.ink
+                        ? StrokesPainter(InkDocument.decode(page.ink))
+                        : null,
+                    child: page.kind == PageKind.text
+                        ? Padding(
+                            padding: const EdgeInsets.all(80),
+                            child: Text(
+                              page.body,
+                              overflow: TextOverflow.fade,
+                              style: const TextStyle(
+                                fontSize: 40,
+                                height: 1.6,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
